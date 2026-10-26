@@ -20,6 +20,7 @@
 | `src/pdfLoad.ts` | PDF読み込み共通処理(暗号化の除去) |
 | `src/canvasTools.ts` | 描画ツール・選択・キー操作(fabric.js) |
 | `src/propsPanel.ts` | プロパティパネル |
+| `src/align.ts` | 整列・均等割り付けの計算(純粋関数) |
 | `src/formFields.ts` | AcroFormの読み込み・入力欄 |
 | `src/formApply.ts` | フォーム値のPDFへの反映 |
 | `src/exportPdf.ts` | PDF書き出し |
@@ -38,6 +39,12 @@
 
 ### 編集
 テキスト・画像・四角形・楕円・フリーハンドの追加、選択/移動/リサイズ/削除、プロパティの数値編集、コピー・貼り付け・複製、編集モードON/OFF、表示倍率変更、ページ送り。
+
+### 整列・均等割り付け(複数選択時)
+複数のオブジェクトを選択すると、プロパティパネルに「整列」が表示される(`#align-left` `#align-right` `#align-distribute-h` `#align-distribute-v`)。基準は各オブジェクトの外接矩形(回転・線幅を含む)。
+- 左に整列 / 右に整列: 選択範囲の最も左 / 右の端に揃える。
+- 左右に均等割り付け / 上下に均等割り付け: 両端のオブジェクトは動かさず、間の隙間が等しくなるよう並べる。3つ以上の選択で有効(2つ以下では無効)。
+- 別ページのオブジェクトは同時に選択できないため、対象は常に現在のページ内。
 
 ### フォーム
 AcroForm項目(テキスト・チェック・ラジオ・ドロップダウン)の入力。保存時に確定(flatten)を選べる。
@@ -61,6 +68,10 @@ AcroForm項目(テキスト・チェック・ラジオ・ドロップダウン)�
 | `#save-btn` | PDFを保存 |
 | `#toggle-form-panel` | フォーム項目パネルの開閉 |
 | `#edit-mode-toggle` | 編集モード切替 |
+| `#align-left` | 左に整列 |
+| `#align-right` | 右に整列 |
+| `#align-distribute-h` | 左右に均等割り付け |
+| `#align-distribute-v` | 上下に均等割り付け |
 | `#merge-btn` | 結合ダイアログを開く |
 | `#merge-dialog` | 結合ダイアログ本体 |
 | `#merge-input` | 結合するPDFの追加(複数選択) |

@@ -8,3 +8,5 @@ export { fabric } from "fabric";
 export * as pdfLib from "@cantoo/pdf-lib";
 export * from "../src/jpFont";
 export * from "../src/mergePdf";
+export * from "../src/align";
+export * from "../src/propsPanel";

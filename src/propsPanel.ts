@@ -5,6 +5,7 @@ import { els } from "./dom";
 import { state, currentCanvas } from "./state";
 import { RENDER_SCALE as S } from "./constants";
 import { isHexColor } from "./colors";
+import { computeAlign, MIN_DISTRIBUTE, type AlignMode } from "./align";
 import { isShapeObject, isTextObject, deleteSelectedObjects, duplicateSelection } from "./canvasTools";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -40,6 +41,12 @@ export function refreshPropsPanel(): void {
   };
   show("text", kind === "text");
   show("shape", kind === "shape" || kind === "path");
+  show("align", kind === "multi");
+  if (kind === "multi") {
+    const count = (obj as fabric.ActiveSelection).size();
+    $<HTMLButtonElement>("align-distribute-h").disabled = count < MIN_DISTRIBUTE;
+    $<HTMLButtonElement>("align-distribute-v").disabled = count < MIN_DISTRIBUTE;
+  }
   $("prop-fill").parentElement!.hidden = kind === "path";
   $("prop-fill-none").parentElement!.hidden = kind === "path";
   const single = kind !== "multi";
@@ -109,6 +116,31 @@ function setScaledSize(obj: fabric.Object, axis: "x" | "y", targetPx: number): v
   obj.set(axis === "x" ? { scaleX: targetPx / unit } : { scaleY: targetPx / unit });
 }
 
+/**
+ * 複数選択中のオブジェクトを整列・均等割り付けする。
+ * 選択グループ内の座標は相対値なので、いったん選択を解除してキャンバス上の座標で動かし、選択し直す。
+ */
+export function alignSelection(mode: AlignMode): void {
+  const canvas = currentCanvas();
+  const active = selected();
+  if (!canvas || !active || !state.editMode || active.type !== "activeSelection") return;
+  const objs = (active as fabric.ActiveSelection).getObjects().slice();
+  canvas.discardActiveObject();
+  const rects = objs.map((o) => {
+    const b = o.getBoundingRect(true, true);
+    return { left: b.left, top: b.top, width: b.width, height: b.height };
+  });
+  computeAlign(rects, mode).forEach(([dx, dy], i) => {
+    const o = objs[i]!;
+    o.set({ left: (o.left ?? 0) + dx, top: (o.top ?? 0) + dy });
+    o.setCoords();
+  });
+  const sel = new fabric.ActiveSelection(objs, { canvas });
+  canvas.setActiveObject(sel);
+  canvas.requestRenderAll();
+  canvas.fire("object:modified", { target: sel });
+}
+
 function bindInputs(): void {
   const on = (id: string, ev: string, fn: () => void) => $(id).addEventListener(ev, fn);
 
@@ -164,6 +196,10 @@ function bindInputs(): void {
   on("prop-forward", "click", z((c, o) => c.bringForward(o)));
   on("prop-backward", "click", z((c, o) => c.sendBackwards(o)));
   on("prop-back", "click", z((c, o) => c.sendToBack(o)));
+  on("align-left", "click", () => alignSelection("left"));
+  on("align-right", "click", () => alignSelection("right"));
+  on("align-distribute-h", "click", () => alignSelection("distribute-h"));
+  on("align-distribute-v", "click", () => alignSelection("distribute-v"));
   on("prop-duplicate", "click", () => void duplicateSelection());
   on("prop-delete", "click", () => deleteSelectedObjects());
 }

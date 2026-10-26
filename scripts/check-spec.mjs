@@ -29,7 +29,7 @@ const htmlIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
 const specIds = new Set(ticks(section("画面要素")).filter((t) => t.startsWith("#")).map((t) => t.slice(1)));
 for (const id of specIds) if (!htmlIds.has(id)) errors.push(`SPEC.md の #${id} が index.html に存在しません`);
 for (const id of htmlIds)
-  if (/^(merge-|save-btn|file-input|toggle-form-panel|edit-mode-toggle)/.test(id) && !specIds.has(id))
+  if (/^(merge-|align-|save-btn|file-input|toggle-form-panel|edit-mode-toggle)/.test(id) && !specIds.has(id))
     errors.push(`index.html の #${id} が SPEC.md「画面要素」に未記載です`);
 
 // 4: CLI
