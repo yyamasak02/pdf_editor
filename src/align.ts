@@ -15,7 +15,8 @@ export const MIN_DISTRIBUTE = 3;
 /**
  * 各矩形の移動量 [dx, dy] を返す(入力と同じ順序)。
  * - left / right: 全体の最も左 / 右の端に揃える
- * - distribute-h / v: 両端のオブジェクトは動かさず、間の空き(隙間)が等しくなるよう並べる
+ * - distribute-h / v: 中心位置の順に並べ、両端のオブジェクトは動かさず、間の空き(隙間)が等しくなるよう並べる
+ *   (矩形が重なっている場合、隙間は負になりうる)
  */
 export function computeAlign(rects: Rect[], mode: AlignMode): [number, number][] {
   const moves: [number, number][] = rects.map(() => [0, 0]);
@@ -32,10 +33,11 @@ export function computeAlign(rects: Rect[], mode: AlignMode): [number, number][]
     const horizontal = mode === "distribute-h";
     const start = (r: Rect) => (horizontal ? r.left : r.top);
     const size = (r: Rect) => (horizontal ? r.width : r.height);
-    const order = rects.map((_, i) => i).sort((a, b) => start(rects[a]!) - start(rects[b]!));
+    // 並び順は中心位置で決める(矩形が重なっても、両端が一意に定まり動かないようにするため)。
+    const center = (r: Rect) => start(r) + size(r) / 2;
+    const order = rects.map((_, i) => i).sort((a, b) => center(rects[a]!) - center(rects[b]!));
     const first = rects[order[0]!]!;
-    const lastIdx = order.reduce((best, i) => (start(rects[i]!) + size(rects[i]!) > start(rects[best]!) + size(rects[best]!) ? i : best), order[0]!);
-    const last = rects[lastIdx]!;
+    const last = rects[order[order.length - 1]!]!;
     const span = start(last) + size(last) - start(first);
     const total = order.reduce((sum, i) => sum + size(rects[i]!), 0);
     const gap = (span - total) / (rects.length - 1);
@@ -46,6 +48,9 @@ export function computeAlign(rects: Rect[], mode: AlignMode): [number, number][]
       moves[i] = horizontal ? [d, 0] : [0, d];
       pos += size(r) + gap;
     }
+    // 両端は動かさない(浮動小数点の誤差で微小にずれるのを防ぐ)。
+    moves[order[0]!] = [0, 0];
+    moves[order[order.length - 1]!] = [0, 0];
   }
   return moves;
 }
