@@ -7,6 +7,16 @@
 3. **秘匿情報を入れない**: APIキー・トークン・パスワード・秘密鍵・`.env`・個人情報を含むファイルはコミットしない。`scripts/check-secrets.sh` がコミット時に検査する。このリポジトリはpublic。
 4. **仕様書を作成・更新し、ソースとの差分を確認する**: 仕様は `docs/SPEC.md`。`src/` `cli/` `index.html` を変えたら同じコミットで仕様書も更新する。`npm run check:spec` で仕様書とソースの整合を確認する。
 
+## 作業の流れ(ブランチ→PR→マージ)
+1. `main` を最新にして作業ブランチを切る(`git switch main && git pull && git switch -c <type>/<name>`)。
+2. 変更をコミットし、ブランチをpushする。
+3. **作業が一区切りしたらPRを作成する**(`gh pr create --base main`)。本文に変更内容・確認結果を書き、末尾に `🤖 Generated with [Claude Code](https://claude.com/claude-code)` を付ける。PRのURLをユーザーに伝える。
+4. **マージ**
+   - ユーザーがプロンプトで「マージして」と言ったら、そのPRをマージする: `gh pr merge <番号> --squash --delete-branch` のあと `git switch main && git pull`。
+   - **軽微な修正は、PR作成後すぐにマージしてよい**。軽微とは次をすべて満たすもの: 誤字・文言・コメント・ドキュメントの修正など動作が変わらない / 差分が小さい(目安30行以内)/ typecheck・test・check:spec が通っている / フック・設定・依存関係・セキュリティに関わらない。
+   - 上記に当てはまらない変更(機能追加、挙動の変更、フック/設定/依存の変更など)は、PRを作ったところで止めてユーザーの指示を待つ。迷ったら軽微とみなさない。
+   - マージしたら、その旨(PR番号・方式)をユーザーに報告する。
+
 ## コミット前の確認
 `npm run typecheck && npm test && npm run check:spec`
 
