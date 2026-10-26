@@ -4,6 +4,10 @@
 
 TypeScriptで実装し、`dist/app.js` にビルドしたものを `index.html` が読み込む構成です(pdf.js / fabric.js / pdf-lib も含めて1ファイルにバンドル済みなので、ビルド後はネット接続なしでも動作します)。
 
+## 公開版(GitHub Pages)
+
+https://yyamasak02.github.io/pdf_editor/ で、インストール不要のまま使えます。`main` にマージすると GitHub Actions(`.github/workflows/pages.yml`)が自動でビルドして公開を更新します。ファイルはサーバーに送信されず、ブラウザ内だけで処理されます。
+
 ## 使い方(ビルド不要・すぐ使う)
 
 1. `index.html` をブラウザ(Chrome / Edge / Firefoxなど)で直接開いてください。
