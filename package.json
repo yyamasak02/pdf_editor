@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node tests/run.mjs",
     "test:cli": "node build.mjs && node --test tests/cli.test.mjs",
-    "test:e2e": "node build.mjs && node --test tests/e2e.mjs"
+    "test:e2e": "node build.mjs && node --test tests/e2e.mjs",
+    "prepare": "git config core.hooksPath .githooks",
+    "check:spec": "node scripts/check-spec.mjs",
+    "check:secrets": "scripts/check-secrets.sh"
   },
   "type": "module",
   "keywords": [],

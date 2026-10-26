@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# コミット前チェック: ①main直コミット禁止 ②秘匿情報 ③仕様書更新 ④仕様書とソースの整合
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+branch=$(git symbolic-ref --short -q HEAD || echo "")
+if [[ "$branch" =~ ^(main|master)$ && "${ALLOW_MAIN:-}" != "1" ]]; then
+  echo "✗ $branch へ直接コミットはできません。作業ブランチを作成してください: git switch -c feat/<name>" >&2
+  exit 1
+fi
+
+scripts/check-secrets.sh || exit 1
+
+staged=$(git diff --cached --name-only --diff-filter=ACMRD)
+if echo "$staged" | grep -qE '^(src/|cli/|index\.html$)' && ! echo "$staged" | grep -q '^docs/SPEC\.md$' && [ "${SKIP_SPEC:-}" != "1" ]; then
+  echo "✗ src/ cli/ index.html を変更していますが docs/SPEC.md が更新されていません。" >&2
+  echo "  仕様書を更新してください(仕様に影響しない変更なら SKIP_SPEC=1)。" >&2
+  exit 1
+fi
+
+node scripts/check-spec.mjs || exit 1
