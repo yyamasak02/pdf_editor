@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# main/master への直接pushを禁止する(PR経由で取り込む)。
+while read -r local_ref _ remote_ref _; do
+  if [[ "$remote_ref" =~ refs/heads/(main|master)$ && "${ALLOW_MAIN:-}" != "1" ]]; then
+    echo "✗ main への直接pushは禁止です。作業ブランチをpushしてPRを作成してください。" >&2
+    exit 1
+  fi
+done
+exit 0
