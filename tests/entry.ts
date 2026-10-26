@@ -1,0 +1,10 @@
+export * from "../src/canvasTools";
+export * from "../src/exportPdf";
+export * from "../src/persistence";
+export * from "../src/formFields";
+export { state } from "../src/state";
+export { els } from "../src/dom";
+export { fabric } from "fabric";
+export * as pdfLib from "@cantoo/pdf-lib";
+export * from "../src/jpFont";
+export * from "../src/mergePdf";

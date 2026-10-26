@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PDF編集ツール</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">PDF編集ツール</div>
+
+  <label class="btn btn-primary" for="file-input">PDFを開く</label>
+  <input type="file" id="file-input" accept="application/pdf" hidden />
+
+  <div class="nav-group">
+    <button id="prev-page" class="btn" disabled>&larr;</button>
+    <span id="page-info">- / -</span>
+    <button id="next-page" class="btn" disabled>&rarr;</button>
+  </div>
+
+  <div class="nav-group">
+    <label for="zoom-select">表示倍率</label>
+    <select id="zoom-select">
+      <option value="0.75">75%</option>
+      <option value="1" selected>100%</option>
+      <option value="1.25">125%</option>
+      <option value="1.5">150%</option>
+      <option value="2">200%</option>
+    </select>
+  </div>
+
+  <button id="merge-btn" class="btn">PDFを結合</button>
+
+  <div class="spacer"></div>
+
+  <button id="toggle-form-panel" class="btn" disabled>フォーム項目</button>
+  <button id="save-btn" class="btn btn-primary" disabled>PDFを保存</button>
+</header>
+
+<div id="workspace">
+  <aside id="toolpanel">
+    <button id="edit-mode-toggle" class="btn edit-mode-toggle" aria-pressed="true"
+      title="ONの間だけ編集でき、テキストボックスの枠が表示されます">編集モード: ON</button>
+    <div class="tool-divider"></div>
+    <div class="tool-group">
+      <button class="tool-btn active" data-tool="select" title="選択/移動/リサイズ">選択</button>
+      <button class="tool-btn" data-tool="text" title="テキストを追加">テキスト</button>
+      <label class="tool-btn" id="image-tool-label" title="画像を追加">
+        画像
+        <input type="file" id="image-input" accept="image/*" hidden />
+      </label>
+      <button class="tool-btn" data-tool="rect" title="四角形を描画">四角形</button>
+      <button class="tool-btn" data-tool="ellipse" title="楕円/円を描画">楕円</button>
+      <button class="tool-btn" data-tool="pen" title="フリーハンド描画・署名">ペン/署名</button>
+    </div>
+
+    <div class="tool-divider"></div>
+
+    <div class="tool-option">
+      <label for="color-input">色</label>
+      <input type="color" id="color-input" value="#e11d48" />
+    </div>
+
+    <div class="tool-option">
+      <label for="fill-input">塗りつぶし</label>
+      <input type="color" id="fill-input" value="#fde047" />
+    </div>
+    <div class="tool-option tool-option-checkbox">
+      <label><input type="checkbox" id="fill-enabled" /> 塗りつぶしを使う</label>
+    </div>
+
+    <div class="tool-option">
+      <label for="stroke-width">線の太さ</label>
+      <input type="range" id="stroke-width" min="1" max="20" value="3" />
+      <span id="stroke-width-value">3</span>
+    </div>
+
+    <div class="tool-option">
+      <label for="font-size">文字サイズ</label>
+      <input type="number" id="font-size" min="6" max="200" value="20" />
+    </div>
+
+    <div class="tool-divider"></div>
+
+    <button id="delete-selected" class="btn btn-danger">選択を削除</button>
+  </aside>
+
+  <main id="stage-area">
+    <div id="empty-state">
+      <p>左上の「PDFを開く」からPDFファイルを選択してください。</p>
+      <p class="hint">ファイルはサーバーに送信されず、お使いのブラウザ内だけで処理されます。</p>
+    </div>
+    <div id="stage"></div>
+  </main>
+
+  <aside id="props-panel" class="hidden" aria-label="プロパティ">
+    <h3>プロパティ</h3>
+    <p id="props-empty" class="hint">オブジェクトを選択すると、ここで位置・サイズ・色などを数値で設定できます。<br />
+      Ctrl+C / X / V でコピー・切り取り・貼り付け、Ctrl+D で複製、Ctrl+A で全選択。</p>
+    <div id="props-body" hidden>
+      <div class="props-group" data-props="geometry">
+        <div class="props-title">位置とサイズ(pt)</div>
+        <div class="props-grid">
+          <label>X <input type="number" id="prop-x" step="1" /></label>
+          <label>Y <input type="number" id="prop-y" step="1" /></label>
+          <label>幅 <input type="number" id="prop-w" step="1" min="1" /></label>
+          <label>高さ <input type="number" id="prop-h" step="1" min="1" /></label>
+          <label>回転(°) <input type="number" id="prop-angle" step="1" /></label>
+          <label>不透明度(%) <input type="number" id="prop-opacity" step="5" min="0" max="100" /></label>
+        </div>
+      </div>
+
+      <div class="props-group" data-props="text">
+        <div class="props-title">文字</div>
+        <div class="props-grid">
+          <label>サイズ(pt) <input type="number" id="prop-fontsize" step="1" min="1" /></label>
+          <label>文字色 <input type="color" id="prop-color" /></label>
+        </div>
+        <div class="props-row">
+          <button type="button" class="btn props-toggle" id="prop-bold" title="太字"><b>B</b></button>
+          <button type="button" class="btn props-toggle" id="prop-italic" title="斜体"><i>I</i></button>
+          <button type="button" class="btn props-toggle" id="prop-align-left" title="左揃え">左</button>
+          <button type="button" class="btn props-toggle" id="prop-align-center" title="中央揃え">中央</button>
+          <button type="button" class="btn props-toggle" id="prop-align-right" title="右揃え">右</button>
+        </div>
+        <div class="props-grid">
+          <label>背景色 <input type="color" id="prop-bg" /></label>
+          <label class="props-check"><input type="checkbox" id="prop-bg-none" /> 背景なし</label>
+        </div>
+      </div>
+
+      <div class="props-group" data-props="shape">
+        <div class="props-title">線と塗り</div>
+        <div class="props-grid">
+          <label>線の色 <input type="color" id="prop-stroke" /></label>
+          <label>線の太さ(pt) <input type="number" id="prop-strokewidth" step="0.5" min="0" /></label>
+          <label>塗りの色 <input type="color" id="prop-fill" /></label>
+          <label class="props-check"><input type="checkbox" id="prop-fill-none" /> 塗りなし</label>
+        </div>
+      </div>
+
+      <div class="props-group" data-props="arrange">
+        <div class="props-title">重なり順・操作</div>
+        <div class="props-row">
+          <button type="button" class="btn" id="prop-front">最前面</button>
+          <button type="button" class="btn" id="prop-forward">前面へ</button>
+          <button type="button" class="btn" id="prop-backward">背面へ</button>
+          <button type="button" class="btn" id="prop-back">最背面</button>
+        </div>
+        <div class="props-row">
+          <button type="button" class="btn" id="prop-duplicate">複製 (Ctrl+D)</button>
+          <button type="button" class="btn btn-danger" id="prop-delete">削除</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="form-panel" class="hidden">
+    <h3>フォーム項目</h3>
+    <div id="form-fields-list"><p class="hint">このPDFにはフォーム項目がありません。</p></div>
+    <label class="tool-option-checkbox">
+      <input type="checkbox" id="flatten-form" /> 保存時にフォームを確定(編集不可に)する
+    </label>
+  </aside>
+</div>
+
+<div id="merge-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-label="PDFを結合">
+  <div class="modal-box">
+    <h3>PDFを結合・並べ替え</h3>
+    <p class="hint">PDFを複数選択し、↑↓ボタンまたはドラッグで順番を決めてください(上から順に結合されます)。</p>
+    <label class="btn" for="merge-input">PDFを追加(複数選択可)</label>
+    <input type="file" id="merge-input" accept="application/pdf" multiple hidden />
+    <p id="merge-empty" class="hint">まだファイルが選択されていません。2つ以上選ぶと結合できます。</p>
+    <ol id="merge-list"></ol>
+    <p id="merge-status" class="hint" role="status"></p>
+    <div class="modal-actions">
+      <button id="merge-clear" class="btn">クリア</button>
+      <div class="spacer"></div>
+      <button id="merge-close" class="btn">閉じる</button>
+      <button id="merge-download" class="btn" disabled>結合してダウンロード</button>
+      <button id="merge-open" class="btn btn-primary" disabled>結合して編集を開始</button>
+    </div>
+  </div>
+</div>
+
+<script src="dist/app.js"></script>
+</body>
+</html>
