@@ -99,6 +99,18 @@
     <p id="props-empty" class="hint">オブジェクトを選択すると、ここで位置・サイズ・色などを数値で設定できます。<br />
       Ctrl+C / X / V でコピー・切り取り・貼り付け、Ctrl+D で複製、Ctrl+A で全選択。</p>
     <div id="props-body" hidden>
+      <div class="props-group" data-props="align" hidden>
+        <div class="props-title">整列(複数選択)</div>
+        <div class="props-row">
+          <button type="button" class="btn" id="align-left" title="左端に揃える">左に整列</button>
+          <button type="button" class="btn" id="align-right" title="右端に揃える">右に整列</button>
+        </div>
+        <div class="props-row">
+          <button type="button" class="btn" id="align-distribute-h" title="左右の間隔を均等にする(3つ以上)">左右に均等割り付け</button>
+          <button type="button" class="btn" id="align-distribute-v" title="上下の間隔を均等にする(3つ以上)">上下に均等割り付け</button>
+        </div>
+      </div>
+
       <div class="props-group" data-props="geometry">
         <div class="props-title">位置とサイズ(pt)</div>
         <div class="props-grid">

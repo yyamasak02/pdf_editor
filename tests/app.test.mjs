@@ -372,6 +372,63 @@ test("PDF結合: 指定順にページが並ぶ", async () => {
   await assert.rejects(() => A.mergePdfs([]));
 });
 
+test("整列: 計算(左/右/左右・上下の均等割り付け)", async () => {
+  const R = (left, top, width, height) => ({ left, top, width, height });
+  const rs = [R(50, 0, 20, 10), R(0, 30, 10, 10), R(200, 60, 30, 10)];
+  const left = A.computeAlign(rs, "left");
+  assert.deepEqual(left.map((m) => m[0]), [-50, 0, -200]);
+  assert.ok(left.every((m) => m[1] === 0), "左揃えで縦方向は動かない");
+  const right = A.computeAlign(rs, "right");
+  assert.deepEqual(right.map((m) => m[0]), [160, 220, 0]);
+  assert.ok(right.every((m) => m[1] === 0), "右揃えで縦方向は動かない");
+  // 左右: 順序は左から [1(0-10), 0(50-70), 2(200-230)] → 隙間=(230-0-60)/2=85
+  const h = A.computeAlign(rs, "distribute-h");
+  assert.deepEqual(h.map((m) => m[0]), [45, 0, 0]);
+  assert.ok(h.every((m) => m[1] === 0));
+  const v = A.computeAlign([R(0, 0, 10, 10), R(0, 10, 10, 10), R(0, 90, 10, 10)], "distribute-v");
+  assert.deepEqual(v.map((m) => m[1]), [0, 35, 0]);
+  assert.ok(v.every((m) => m[0] === 0), "上下の均等割り付けで横方向は動かない");
+  // 矩形が重なっていても、両端(中心が最小・最大)のオブジェクトは動かず、隙間が等しくなる
+  const ov = [R(0, 0, 100, 10), R(10, 0, 20, 10), R(30, 0, 10, 10), R(60, 0, 10, 10)];
+  const o = A.computeAlign(ov, "distribute-h");
+  // 中心は A=50, B=20, C=35, D=65 → 両端は B(添字1)と D(添字3)
+  assert.deepEqual([o[1][0], o[3][0]], [0, 0], "両端は動かない");
+  const placed = ov.map((r, i) => ({ s: r.left + o[i][0], e: r.left + o[i][0] + r.width, c: r.left + r.width / 2 }));
+  const byCenter = [...placed].sort((a, b) => a.c - b.c);
+  const gaps = byCenter.slice(1).map((p, i) => p.s - byCenter[i].e);
+  assert.ok(gaps.every((g) => Math.abs(g - gaps[0]) < 1e-9), "隙間が等しい: " + gaps);
+  assert.ok(o.every((m) => m[1] === 0));
+  // 2つ以下の均等割り付けは何もしない
+  assert.deepEqual(A.computeAlign([R(0, 0, 5, 5), R(9, 9, 5, 5)], "distribute-h"), [[0, 0], [0, 0]]);
+});
+
+test("整列: 複数選択したオブジェクトを実際に揃える(選択は維持)", async () => {
+  const c = await setup();
+  const mk = (left, top, w, h) => new fabric.Rect({ left, top, width: w, height: h, strokeWidth: 0 });
+  const [a, b, d] = [mk(50, 10, 20, 20), mk(10, 100, 40, 20), mk(300, 200, 30, 20)];
+  c.add(a, b, d);
+  const select = () => { c.discardActiveObject(); c.setActiveObject(new fabric.ActiveSelection([a, b, d], { canvas: c })); };
+  select();
+  A.alignSelection("left");
+  assert.equal(c.getActiveObject()?.type, "activeSelection");
+  c.discardActiveObject(); // 選択中はグループ相対座標になるため、解除してから測る
+  assert.deepEqual([a, b, d].map((o) => Math.round(o.getBoundingRect(true, true).left)), [10, 10, 10]);
+  assert.deepEqual([a, b, d].map((o) => Math.round(o.getBoundingRect(true, true).top)), [10, 100, 200], "縦位置は変わらない");
+  c.discardActiveObject(); a.set({ left: 50 }); b.set({ left: 10 }); d.set({ left: 300 }); select();
+  A.alignSelection("right");
+  c.discardActiveObject();
+  assert.deepEqual([a, b, d].map((o) => Math.round(o.getBoundingRect(true, true).left + o.getScaledWidth())), [330, 330, 330]);
+  assert.deepEqual([a, b, d].map((o) => Math.round(o.getBoundingRect(true, true).top)), [10, 100, 200], "縦位置は変わらない");
+  c.discardActiveObject(); a.set({ left: 0, top: 0 }); b.set({ left: 100, top: 50 }); d.set({ left: 300, top: 200 }); select();
+  A.alignSelection("distribute-h");
+  c.discardActiveObject();
+  const r = [a, b, d].map((o) => o.getBoundingRect(true, true));
+  assert.equal(Math.round(r[1].left - (r[0].left + r[0].width)), Math.round(r[2].left - (r[1].left + r[1].width)));
+  assert.equal(Math.round(r[0].left), 0);
+  assert.equal(Math.round(r[2].left), 300);
+  assert.deepEqual(r.map((x) => Math.round(x.top)), [0, 50, 200], "縦位置は変わらない");
+});
+
 test("savePdf(UI): 保存ボタンの状態が元に戻り、エラー時はalertされる", async () => {
   await setup();
   state.originalBytes = new Uint8Array([1, 2, 3]); // 壊れたPDF
